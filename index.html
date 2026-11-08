@@ -1,0 +1,643 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Game UI Prompt Lab</title>
+<meta name="description" content="게임 UI 디자인용 이미지 AI·코딩 AI 프롬프트 생성기. 오프라인 단일 파일.">
+<style>
+:root{
+  --bg:#15161a; --panel:#1c1e23; --panel2:#23262c; --line:#30343c; --ink:#ecebe6; --mute:#9a9ca3; --faint:#6c6f77;
+  --acc:#f2b84b; --acc-ink:#1b1608; --ok:#7fcf8e; --bad:#ef7a6a;
+  --r:10px;
+  font-family:"Segoe UI","Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.5}
+button,input,textarea,select{font:inherit;color:inherit}
+header{display:flex;align-items:center;gap:16px;padding:12px 20px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:5}
+header h1{font-size:15px;margin:0;font-weight:700;letter-spacing:.02em}
+header h1 small{color:var(--faint);font-weight:400;margin-left:8px}
+header .sp{flex:1}
+.btn{border:1px solid var(--line);background:var(--panel2);padding:7px 12px;border-radius:8px;cursor:pointer;min-height:34px}
+.btn:hover{border-color:#4a4f59}
+.btn:focus-visible,.chip:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+.btn.pri{background:var(--acc);color:var(--acc-ink);border-color:var(--acc);font-weight:700}
+.btn.ghost{background:transparent}
+main{display:grid;grid-template-columns:minmax(380px,1fr) minmax(420px,1.1fr);gap:0;min-height:calc(100vh - 59px)}
+@media (max-width:980px){main{grid-template-columns:1fr}}
+.left{padding:16px 20px 60px;border-right:1px solid var(--line)}
+.right{padding:16px 20px 60px;position:sticky;top:59px;align-self:start;max-height:calc(100vh - 59px);overflow:auto}
+@media (max-width:980px){.right{position:static;max-height:none}}
+section.q{padding:14px 0;border-bottom:1px solid var(--line)}
+section.q:last-child{border-bottom:0}
+.qh{display:flex;align-items:baseline;gap:8px;margin-bottom:8px}
+.qh b{font-size:13px}
+.qh span{color:var(--faint);font-size:12px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--panel);padding:6px 11px;border-radius:999px;cursor:pointer;font-size:13px;min-height:32px}
+.chip:hover{border-color:#4a4f59}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink);font-weight:600}
+.targets{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.targets .chip{border-radius:8px;text-align:left;padding:8px 10px}
+.targets .chip small{display:block;opacity:.65;font-size:11px;font-weight:400}
+.group-label{font-size:11px;color:var(--faint);margin:10px 0 4px;letter-spacing:.06em}
+.palettes{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+.pal{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:6px;cursor:pointer;text-align:left}
+.pal[aria-pressed="true"]{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink) inset}
+.pal .sw{display:flex;height:18px;border-radius:4px;overflow:hidden;margin-bottom:4px}
+.pal .sw i{flex:1}
+.pal span{font-size:12px}
+.colors{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:8px}
+.colors label{font-size:11px;color:var(--mute);display:flex;flex-direction:column;gap:3px}
+.colors input[type=color]{width:100%;height:30px;border:1px solid var(--line);border-radius:6px;background:var(--panel);padding:2px;cursor:pointer}
+textarea,input[type=text]{width:100%;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 10px;resize:vertical}
+textarea{min-height:56px}
+.field{margin-top:8px}
+.field label{display:block;font-size:12px;color:var(--mute);margin-bottom:3px}
+.out-head{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.out-head h2{font-size:13px;margin:0}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:transparent;padding:5px 10px;cursor:pointer;font-size:12px}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg);font-weight:600}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);margin-bottom:12px}
+.box-h{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line);font-size:12px;color:var(--mute)}
+.box-h .sp{flex:1}
+.box pre{margin:0;padding:12px;white-space:pre-wrap;word-break:break-word;font-family:"Cascadia Mono",Consolas,"D2Coding",monospace;font-size:12.5px;line-height:1.6;max-height:440px;overflow:auto}
+.count{font-variant-numeric:tabular-nums;color:var(--faint)}
+.warn{font-size:12px;color:var(--bad);margin:4px 0 10px}
+.warn:empty{display:none}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:13px;opacity:0;transition:opacity .15s;pointer-events:none}
+.toast.on{opacity:1}
+/* preview */
+.pv-wrap{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px}
+.pv{--p-bg:#222;--p-sf:#333;--p-pr:#f90;--p-se:#0af;--p-tx:#fff;--p-r:12px;
+  background:var(--p-bg);color:var(--p-tx);border-radius:12px;overflow:hidden;position:relative;border:1px solid var(--line);flex:none}
+.pv.portrait{width:190px;height:338px}
+.pv.landscape{width:338px;height:190px}
+.pv .top{display:flex;gap:5px;padding:8px;justify-content:space-between}
+.pv .res{background:var(--p-sf);border-radius:var(--p-r);padding:3px 8px;font-size:10px;font-weight:700;display:flex;gap:4px;align-items:center}
+.pv .res i{width:8px;height:8px;border-radius:50%;background:var(--p-se);display:inline-block}
+.pv .card{background:var(--p-sf);border-radius:var(--p-r);margin:6px 8px;padding:8px;font-size:10px}
+.pv .card b{display:block;font-size:12px;margin-bottom:4px}
+.pv .bar{height:6px;border-radius:99px;background:color-mix(in srgb,var(--p-tx) 15%,transparent);overflow:hidden}
+.pv .bar i{display:block;height:100%;width:62%;background:var(--p-se);border-radius:inherit}
+.pv .slots{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:6px}
+.pv .slots i{aspect-ratio:1;border-radius:calc(var(--p-r)*.6);background:color-mix(in srgb,var(--p-bg) 60%,var(--p-sf));border:1px solid color-mix(in srgb,var(--p-tx) 12%,transparent)}
+.pv .cta{position:absolute;left:8px;right:8px;bottom:10px;background:var(--p-pr);color:var(--p-bg);text-align:center;font-weight:800;font-size:13px;padding:9px;border-radius:var(--p-r)}
+.pv.landscape .cta{left:auto;width:120px}
+.pv.landscape .card{width:150px;display:inline-block;vertical-align:top}
+.pv.d-soft .card,.pv.d-soft .cta,.pv.d-soft .res{box-shadow:0 4px 10px rgba(0,0,0,.35)}
+.pv.d-bevel .card,.pv.d-bevel .cta,.pv.d-bevel .res{box-shadow:inset 0 2px 0 rgba(255,255,255,.25),inset 0 -3px 0 rgba(0,0,0,.3)}
+.pv.d-glow .cta{box-shadow:0 0 14px var(--p-pr)}
+.pv.d-glow .card{box-shadow:0 0 0 1px var(--p-se),0 0 10px color-mix(in srgb,var(--p-se) 50%,transparent)}
+.pv.s-line .card,.pv.s-line .res{background:transparent;border:1px solid color-mix(in srgb,var(--p-tx) 40%,transparent)}
+.pv-note{font-size:12px;color:var(--mute)}
+.pv-note p{margin:0 0 6px}
+.contrast{font-variant-numeric:tabular-nums}
+.contrast .ok{color:var(--ok)} .contrast .bad{color:var(--bad)}
+/* drawer */
+dialog{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:0;width:min(560px,92vw)}
+dialog::backdrop{background:rgba(0,0,0,.55)}
+.dlg-h{display:flex;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line)}
+.dlg-h b{flex:1}
+.dlg-b{padding:12px 14px;max-height:60vh;overflow:auto}
+.dlg-f{display:flex;gap:6px;padding:10px 14px;border-top:1px solid var(--line);flex-wrap:wrap}
+.item{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}
+.item:last-child{border-bottom:0}
+.item .t{flex:1;min-width:0}
+.item .t div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item .t small{color:var(--faint)}
+.empty{color:var(--faint);padding:20px 0;text-align:center}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Game UI Prompt Lab<small>게임 UI 프롬프트 생성기</small></h1>
+  <div class="sp"></div>
+  <button class="btn ghost" id="bRandom" title="선택을 무작위로 조합">무작위 조합</button>
+  <button class="btn ghost" id="bShare" title="현재 설정이 담긴 링크 복사">공유 링크</button>
+  <button class="btn" id="bLib">저장함</button>
+  <button class="btn ghost" id="bReset">초기화</button>
+</header>
+<main>
+  <div class="left" id="form"></div>
+  <div class="right">
+    <div class="out-head">
+      <h2>미리보기</h2>
+    </div>
+    <div class="pv-wrap">
+      <div class="pv portrait" id="pv" aria-label="색상과 형태 미리보기">
+        <div class="top"><span class="res"><i></i>12,480</span><span class="res">Lv.24</span></div>
+        <div class="card"><b>오늘의 임무</b><div class="bar"><i></i></div></div>
+        <div class="card"><b>가방</b><div class="slots"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+        <div class="cta">시작</div>
+      </div>
+      <div class="pv-note">
+        <p>색, 모서리, 깊이감만 대략 보여 주는 견본입니다. 실제 화면은 생성 AI가 만듭니다.</p>
+        <div class="contrast" id="contrast"></div>
+      </div>
+    </div>
+    <div class="out-head">
+      <h2>프롬프트</h2>
+      <div class="seg" id="lang" role="group" aria-label="출력 언어">
+        <button data-v="en" aria-pressed="true">English</button>
+        <button data-v="ko" aria-pressed="false">한국어</button>
+      </div>
+      <div class="sp" style="flex:1"></div>
+      <button class="btn" id="bSave">설정 저장</button>
+    </div>
+    <div class="warn" id="warn"></div>
+    <div id="outs"></div>
+  </div>
+</main>
+
+<dialog id="lib">
+  <div class="dlg-h"><b>저장함</b><button class="btn ghost" data-close>닫기</button></div>
+  <div class="dlg-b" id="libList"></div>
+  <div class="dlg-f">
+    <button class="btn" id="bExport">JSON 내보내기</button>
+    <label class="btn" style="display:inline-flex;align-items:center">JSON 가져오기<input type="file" id="fImport" accept="application/json" hidden></label>
+  </div>
+</dialog>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+"use strict";
+/* ---------- data ---------- */
+// Each option: id, ko (UI label), en (prompt phrase), kp (Korean prompt phrase)
+const TARGETS = [
+  {id:"img-natural", group:"이미지 AI", ko:"자연어 이미지 AI", sub:"GPT 이미지 · Gemini · Ideogram"},
+  {id:"img-mj", group:"이미지 AI", ko:"Midjourney", sub:"파라미터 포함"},
+  {id:"img-sd", group:"이미지 AI", ko:"Stable Diffusion", sub:"태그 + 네거티브"},
+  {id:"code-web", group:"코딩 AI", ko:"HTML/CSS", sub:"단일 파일 목업"},
+  {id:"code-uitk", group:"코딩 AI", ko:"Unity UI Toolkit", sub:"UXML + USS"},
+  {id:"code-ugui", group:"코딩 AI", ko:"Unity uGUI", sub:"Canvas + TMP"},
+];
+const Q = [
+  {key:"screen", ko:"화면", hint:"하나", opts:[
+    ["main","메인 메뉴","main menu / title screen","메인 메뉴(타이틀 화면)"],
+    ["hud","인게임 HUD","in-game HUD overlay","인게임 HUD"],
+    ["inventory","인벤토리","inventory and equipment screen","인벤토리·장비 화면"],
+    ["shop","상점","in-game shop screen with item offers","상점 화면"],
+    ["gacha","뽑기","gacha / loot box summon screen","뽑기(가챠) 화면"],
+    ["result","결과·보상","stage clear result and reward screen","스테이지 결과·보상 화면"],
+    ["levels","스테이지 선택","level select map screen","스테이지 선택 화면"],
+    ["settings","설정","settings menu","설정 화면"],
+    ["dialog","대화","character dialogue box with portrait","캐릭터 대화창"],
+    ["loading","로딩","loading screen with progress and tip","로딩 화면"],
+    ["popup","팝업","modal popup dialog","모달 팝업"],
+  ]},
+  {key:"platform", ko:"기기", hint:"하나", opts:[
+    ["portrait","모바일 세로","mobile portrait 9:16","모바일 세로 9:16"],
+    ["landscape","모바일 가로","mobile landscape 16:9","모바일 가로 16:9"],
+    ["pc","PC·콘솔","PC / console 16:9 widescreen","PC·콘솔 16:9"],
+  ]},
+  {key:"genre", ko:"장르", hint:"하나", opts:[
+    ["puzzle","캐주얼 퍼즐","casual puzzle","캐주얼 퍼즐"],
+    ["idle","방치형","idle / incremental","방치형"],
+    ["rpg","RPG","fantasy RPG","판타지 RPG"],
+    ["action","액션","action","액션"],
+    ["roguelike","로그라이크","roguelike","로그라이크"],
+    ["sim","경영·시뮬","management simulation","경영 시뮬레이션"],
+    ["shooter","슈팅","shooter","슈팅"],
+    ["card","카드·덱빌딩","card battler / deckbuilder","카드 덱빌딩"],
+    ["horror","호러","horror","호러"],
+    ["party","파티·물리","physics party game","물리 파티 게임"],
+  ]},
+  {key:"style", ko:"아트 스타일", hint:"하나", opts:[
+    ["flat","플랫 벡터","clean flat vector UI","깔끔한 플랫 벡터"],
+    ["toon3d","말랑한 3D","glossy stylized 3D cartoon UI, chunky rounded shapes","광택 있는 카툰 3D, 통통한 둥근 형태"],
+    ["pixel","픽셀 아트","crisp pixel art UI, limited palette, no anti-aliasing","선명한 픽셀 아트, 제한된 팔레트"],
+    ["fantasy","판타지 장식","ornate fantasy UI with carved frames and metal trims","조각 프레임과 금속 장식의 판타지"],
+    ["scifi","SF 홀로그램","sci-fi holographic interface with thin lines and scanlines","얇은 선과 스캔라인의 SF 홀로그램"],
+    ["minimal","미니멀","minimal modern UI with generous spacing","여백 넓은 미니멀"],
+    ["paper","손그림·종이","hand-drawn sketchy UI on paper texture","종이 질감의 손그림"],
+    ["voxel","복셀","voxel / blocky 3D UI","복셀(블록) 3D"],
+    ["neon","네온 사이버펑크","neon cyberpunk UI with glowing edges","빛나는 테두리의 네온 사이버펑크"],
+    ["retro","레트로 아케이드","80s retro arcade UI","80년대 레트로 아케이드"],
+  ]},
+  {key:"mood", ko:"분위기", hint:"여러 개", multi:true, opts:[
+    ["cheerful","밝고 경쾌","cheerful and playful","밝고 경쾌한"],
+    ["cozy","아늑","cozy and warm","아늑하고 따뜻한"],
+    ["epic","웅장","epic and heroic","웅장한"],
+    ["tense","긴장감","tense and gritty","긴장감 있는"],
+    ["dreamy","몽환","dreamy and soft","몽환적인"],
+    ["premium","고급","premium and polished","고급스러운"],
+    ["silly","엉뚱","silly and goofy","엉뚱한"],
+  ]},
+  {key:"shape", ko:"형태", hint:"하나", opts:[
+    ["round","둥글고 말랑","soft rounded corners, pill buttons","둥근 모서리와 알약형 버튼","16px"],
+    ["slight","약간 둥근","slightly rounded corners","살짝 둥근 모서리","8px"],
+    ["sharp","각진","sharp angular corners and chamfered edges","각지고 모서리를 깎은 형태","2px"],
+    ["line","얇은 선","thin outline frames, mostly transparent panels","얇은 외곽선 위주, 비어 있는 패널","6px"],
+  ]},
+  {key:"depth", ko:"깊이감", hint:"하나", opts:[
+    ["flat","평면","flat with no shadows","그림자 없는 평면"],
+    ["soft","부드러운 그림자","subtle soft drop shadows","은은한 그림자"],
+    ["bevel","입체 베벨","thick bevel and inner highlight, tactile buttons","두꺼운 베벨과 하이라이트, 눌릴 듯한 버튼"],
+    ["glow","발광","glowing outlines and bloom accents","빛나는 외곽선과 블룸"],
+  ]},
+  {key:"density", ko:"정보 밀도", hint:"하나", opts:[
+    ["airy","여유","spacious, few elements, strong focal point","요소가 적고 중심이 뚜렷한"],
+    ["balanced","보통","balanced information density","적당한 정보 밀도"],
+    ["dense","빽빽","information-dense, many panels","정보가 많은 촘촘한"],
+  ]},
+  {key:"parts", ko:"넣을 요소", hint:"여러 개", multi:true, opts:[
+    ["currency","재화 표시","currency counters (coins, gems)","재화 표시(코인, 보석)"],
+    ["profile","프로필·레벨","player avatar and level badge","플레이어 아바타와 레벨 배지"],
+    ["cta","큰 시작 버튼","one large primary action button","큰 주 버튼 하나"],
+    ["tabs","하단 탭","bottom navigation tabs","하단 탭 내비게이션"],
+    ["slots","아이템 슬롯","item slot grid with rarity frames","등급 테두리가 있는 아이템 슬롯 격자"],
+    ["progress","진행 바","progress bar","진행 바"],
+    ["badge","알림 배지","red notification badges","빨간 알림 배지"],
+    ["hp","체력·자원 바","health and energy bars","체력·에너지 바"],
+    ["skills","스킬 버튼","skill buttons with cooldown","쿨다운 표시가 있는 스킬 버튼"],
+    ["minimap","미니맵","minimap","미니맵"],
+    ["quest","퀘스트 목록","quest / mission list","퀘스트 목록"],
+    ["timer","타이머","countdown timer","카운트다운 타이머"],
+    ["stars","별점 평가","3-star rating","별 3개 평가"],
+    ["offer","특가 배너","limited-time offer banner","기간 한정 특가 배너"],
+  ]},
+];
+const PALETTES = [
+  {id:"candy", ko:"사탕", c:["#fff4e8","#ffffff","#ff6b8b","#41c7c7","#3b2a3f"]},
+  {id:"forest", ko:"숲속", c:["#1f2b22","#2e3f31","#e8b54a","#8fc27a","#f3eedd"]},
+  {id:"royal", ko:"왕궁", c:["#191529","#2a2342","#e4b363","#7f6bd6","#f2ead9"]},
+  {id:"ocean", ko:"바다", c:["#0f2233","#173650","#ffcf5c","#3fb6e8","#eaf6ff"]},
+  {id:"neon", ko:"네온", c:["#0b0b14","#161629","#ff3df0","#21f0e0","#f2f2ff"]},
+  {id:"mono", ko:"흑백 강조", c:["#121212","#1f1f1f","#f5d000","#9e9e9e","#f0f0f0"]},
+  {id:"paper", ko:"종이", c:["#efe6d2","#faf5e9","#c8553d","#2d6a8a","#2b2520"]},
+  {id:"lava", ko:"용암", c:["#1a0f0e","#2d1916","#ff7a1a","#ffcf3f","#fbe9dc"]},
+];
+const COLOR_ROLES = [["bg","배경","background"],["surface","패널","panel surface"],["primary","주색","primary accent"],["secondary","보조색","secondary accent"],["text","글자","text"]];
+const DEFAULT = {
+  target:"img-natural", screen:"main", platform:"portrait", genre:"puzzle", style:"toon3d",
+  mood:["cheerful"], shape:"round", depth:"bevel", density:"balanced",
+  parts:["currency","profile","cta","tabs","badge"],
+  palette:"candy", colors:PALETTES[0].c.slice(),
+  title:"", concept:"", extra:"", avoid:"", lang:"en"
+};
+const LS_STATE="gupl.state.v1", LS_LIB="gupl.lib.v1";
+
+/* ---------- state ---------- */
+let S = load();
+function load(){
+  const fromHash = readHash();
+  if(fromHash) return fromHash;
+  try{ const s=JSON.parse(localStorage.getItem(LS_STATE)); if(s) return sanitize(s);}catch(e){}
+  return structuredClone(DEFAULT);
+}
+function sanitize(s){
+  const o=structuredClone(DEFAULT);
+  for(const k in o){ if(s[k]!==undefined && typeof s[k]===typeof o[k] && Array.isArray(s[k])===Array.isArray(o[k])) o[k]=s[k]; }
+  if(!TARGETS.some(t=>t.id===o.target)) o.target=DEFAULT.target;
+  for(const q of Q){
+    const ids=q.opts.map(x=>x[0]);
+    if(q.multi) o[q.key]=o[q.key].filter(v=>ids.includes(v));
+    else if(!ids.includes(o[q.key])) o[q.key]=DEFAULT[q.key];
+  }
+  if(o.colors.length!==5 || !o.colors.every(c=>/^#[0-9a-f]{6}$/i.test(c))) o.colors=DEFAULT.colors.slice();
+  return o;
+}
+function readHash(){
+  if(!location.hash.startsWith("#s=")) return null;
+  try{ return sanitize(JSON.parse(decodeURIComponent(escape(atob(location.hash.slice(3)))))); }catch(e){ return null; }
+}
+function persist(){ localStorage.setItem(LS_STATE, JSON.stringify(S)); }
+
+/* ---------- helpers ---------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const opt=(key,id)=>Q.find(q=>q.key===key).opts.find(o=>o[0]===id);
+const en=(k,id)=>opt(k,id)?.[2]||""; const kp=(k,id)=>opt(k,id)?.[3]||"";
+const list=(arr,L)=>{ if(arr.length<2) return arr.join(""); if(L==="ko") return arr.join(", "); return arr.slice(0,-1).join(", ")+" and "+arr[arr.length-1]; };
+function toast(m){ const t=$("#toast"); t.textContent=m; t.classList.add("on"); clearTimeout(toast.h); toast.h=setTimeout(()=>t.classList.remove("on"),1400); }
+async function copy(text){
+  try{ await navigator.clipboard.writeText(text); }
+  catch(e){ const ta=document.createElement("textarea"); ta.value=text; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); }
+  toast("복사했습니다");
+}
+function lum(hex){ const v=[1,3,5].map(i=>parseInt(hex.substr(i,2),16)/255).map(c=>c<=.03928?c/12.92:((c+.055)/1.055)**2.4); return .2126*v[0]+.7152*v[1]+.0722*v[2]; }
+function ratio(a,b){ const x=lum(a),y=lum(b); return (Math.max(x,y)+.05)/(Math.min(x,y)+.05); }
+function hueName(hex){
+  const r=parseInt(hex.substr(1,2),16)/255,g=parseInt(hex.substr(3,2),16)/255,b=parseInt(hex.substr(5,2),16)/255;
+  const mx=Math.max(r,g,b),mn=Math.min(r,g,b),l=(mx+mn)/2,d=mx-mn;
+  const s=d===0?0:d/(1-Math.abs(2*l-1));
+  if(s<.15) return l>.85?["off-white","흰색 계열"]:l<.15?["near-black","검정 계열"]:["gray","회색"];
+  let h=0; if(mx===r) h=((g-b)/d)%6; else if(mx===g) h=(b-r)/d+2; else h=(r-g)/d+4; h=(h*60+360)%360;
+  const pre=l<.3?["deep ","짙은 "]:l>.75?["pale ","연한 "]:["",""];
+  const names=[[15,"red","빨강"],[40,"orange","주황"],[65,"golden yellow","노랑"],[160,"green","초록"],[200,"teal","청록"],[250,"blue","파랑"],[290,"purple","보라"],[335,"magenta pink","분홍"],[360,"red","빨강"]];
+  const n=names.find(x=>h<x[0]);
+  return [pre[0]+n[1], pre[1]+n[2]];
+}
+
+/* ---------- form ---------- */
+function renderForm(){
+  const f=$("#form"); let h="";
+  // targets
+  h+=`<section class="q"><div class="qh"><b>어디에 넣을 프롬프트인가요</b><span>출력 형식이 바뀝니다</span></div>`;
+  for(const g of ["이미지 AI","코딩 AI"]){
+    h+=`<div class="group-label">${g}</div><div class="targets">`;
+    for(const t of TARGETS.filter(t=>t.group===g)) h+=`<button class="chip" data-target="${t.id}" aria-pressed="${S.target===t.id}">${esc(t.ko)}<small>${esc(t.sub)}</small></button>`;
+    h+=`</div>`;
+  }
+  h+=`</section>`;
+  h+=`<section class="q"><div class="qh"><b>게임</b><span>비워도 됩니다</span></div>
+    <div class="field"><label for="title">게임 이름</label><input type="text" id="title" maxlength="60" placeholder="예: PiggyPop" value="${esc(S.title)}"></div>
+    <div class="field"><label for="concept">한 줄 콘셉트</label><input type="text" id="concept" maxlength="160" placeholder="예: 돼지 저금통을 터뜨려 코인을 모으는 퍼즐" value="${esc(S.concept)}"></div></section>`;
+  for(const q of Q){
+    h+=`<section class="q"><div class="qh"><b>${q.ko}</b><span>${q.hint}</span></div><div class="chips">`;
+    for(const o of q.opts){
+      const on=q.multi?S[q.key].includes(o[0]):S[q.key]===o[0];
+      h+=`<button class="chip" data-q="${q.key}" data-v="${o[0]}" aria-pressed="${on}">${esc(o[1])}</button>`;
+    }
+    h+=`</div></section>`;
+    if(q.key==="style"){
+      h+=`<section class="q"><div class="qh"><b>색상</b><span>프리셋을 고른 뒤 직접 바꿀 수 있습니다</span></div><div class="palettes">`;
+      for(const p of PALETTES) h+=`<button class="pal" data-pal="${p.id}" aria-pressed="${S.palette===p.id}"><div class="sw">${p.c.map(c=>`<i style="background:${c}"></i>`).join("")}</div><span>${esc(p.ko)}</span></button>`;
+      h+=`</div><div class="colors">${COLOR_ROLES.map((r,i)=>`<label>${r[1]}<input type="color" data-ci="${i}" value="${S.colors[i]}"></label>`).join("")}</div></section>`;
+    }
+  }
+  h+=`<section class="q"><div class="qh"><b>추가 요구</b></div>
+    <div class="field"><label for="extra">더 넣을 내용</label><textarea id="extra" maxlength="600" placeholder="예: 버튼 글자는 굵은 둥근 서체, 코인 아이콘은 돼지 얼굴 모양">${esc(S.extra)}</textarea></div>
+    <div class="field"><label for="avoid">피할 것</label><input type="text" id="avoid" maxlength="200" placeholder="예: 보라색 그라데이션, 실사 사진" value="${esc(S.avoid)}"></div></section>`;
+  f.innerHTML=h;
+}
+$("#form").addEventListener("click",e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  if(b.dataset.target){ S.target=b.dataset.target; }
+  else if(b.dataset.q){
+    const q=Q.find(x=>x.key===b.dataset.q), v=b.dataset.v;
+    if(q.multi){ const a=S[q.key]; const i=a.indexOf(v); i<0?a.push(v):a.splice(i,1); }
+    else S[q.key]=v;
+  } else if(b.dataset.pal){
+    const p=PALETTES.find(x=>x.id===b.dataset.pal); S.palette=p.id; S.colors=p.c.slice();
+  } else return;
+  update(true);
+});
+$("#form").addEventListener("input",e=>{
+  const t=e.target;
+  if(t.dataset.ci!==undefined){ S.colors[+t.dataset.ci]=t.value; S.palette="custom"; document.querySelectorAll(".pal").forEach(p=>p.setAttribute("aria-pressed","false")); }
+  else if(["title","concept","extra","avoid"].includes(t.id)) S[t.id]=t.value;
+  else return;
+  update(false);
+});
+function syncPressed(){
+  document.querySelectorAll("[data-target]").forEach(b=>b.setAttribute("aria-pressed",S.target===b.dataset.target));
+  document.querySelectorAll("[data-q]").forEach(b=>{ const q=Q.find(x=>x.key===b.dataset.q); b.setAttribute("aria-pressed", q.multi?S[q.key].includes(b.dataset.v):S[q.key]===b.dataset.v); });
+  document.querySelectorAll("[data-pal]").forEach(b=>b.setAttribute("aria-pressed",S.palette===b.dataset.pal));
+  document.querySelectorAll("[data-ci]").forEach(i=>i.value=S.colors[+i.dataset.ci]);
+}
+
+/* ---------- prompt builders ---------- */
+function ctx(L){
+  const g=(k)=>L==="ko"?kp(k,S[k]):en(k,S[k]);
+  const gm=(k)=>S[k].map(v=>L==="ko"?kp(k,v):en(k,v));
+  const colors=COLOR_ROLES.map((r,i)=>{ const n=hueName(S.colors[i]); return L==="ko"?`${r[1]} ${S.colors[i]}(${n[1]})`:`${n[0]} ${S.colors[i]} ${r[2]}`; });
+  return {screen:g("screen"),platform:g("platform"),genre:g("genre"),style:g("style"),shape:g("shape"),depth:g("depth"),density:g("density"),
+    mood:gm("mood"),parts:gm("parts"),colors,title:S.title.trim(),concept:S.concept.trim(),extra:S.extra.trim(),avoid:S.avoid.trim()};
+}
+const AR={portrait:"9:16",landscape:"16:9",pc:"16:9"};
+const RES={portrait:"1080x1920",landscape:"1920x1080",pc:"1920x1080"};
+
+function imgNatural(L){
+  const c=ctx(L); const lines=[];
+  if(L==="ko"){
+    lines.push(`${c.genre} 게임${c.title?` "${c.title}"`:""}의 ${c.screen} UI 디자인 화면을 ${c.platform} 비율로 그려 주세요.${c.concept?` 게임 콘셉트: ${c.concept}.`:""}`);
+    lines.push(`스타일: ${c.style}. ${c.mood.length?`분위기: ${list(c.mood,L)}. `:""}형태: ${c.shape}, ${c.depth}. 구성: ${c.density} 레이아웃.`);
+    lines.push(`색상: ${c.colors.join(", ")}.`);
+    if(c.parts.length) lines.push(`포함할 요소: ${list(c.parts,L)}.`);
+    lines.push(`실제 게임 화면처럼 보이는 정면 UI 스크린샷. 버튼과 패널 스타일을 통일하고, 글자는 짧고 읽기 쉽게, 아이콘은 같은 화풍으로. 기기 테두리와 손, 원근 목업 없이 화면만.`);
+    if(c.extra) lines.push(c.extra);
+    if(c.avoid) lines.push(`피할 것: ${c.avoid}.`);
+  } else {
+    lines.push(`A ${c.screen} UI design for a ${c.genre} game${c.title?` called "${c.title}"`:""}, ${c.platform}.${c.concept?` Game concept: ${c.concept}.`:""}`);
+    lines.push(`Style: ${c.style}.${c.mood.length?` Mood: ${list(c.mood,L)}.`:""} Shapes: ${c.shape}, ${c.depth}. Layout: ${c.density}.`);
+    lines.push(`Color palette: ${c.colors.join(", ")}.`);
+    if(c.parts.length) lines.push(`Include: ${list(c.parts,L)}.`);
+    lines.push(`Render it as a straight-on, full-screen game UI screenshot. Keep button and panel styling consistent, labels short and legible, icons in one matching style. No device frame, no hands, no perspective mockup.`);
+    if(c.extra) lines.push(c.extra);
+    if(c.avoid) lines.push(`Avoid: ${c.avoid}.`);
+  }
+  return [{label:"프롬프트",text:lines.join("\n")}];
+}
+function imgMJ(L){
+  const c=ctx(L);
+  const bits=[`${c.screen} game UI, ${c.genre} game${c.title?` "${c.title}"`:""}`, c.concept, c.style, ...c.mood, c.shape, c.depth, c.density,
+    `palette ${S.colors.join(" ")}`, ...c.parts, "straight-on screenshot, consistent UI kit, legible labels", c.extra].filter(Boolean);
+  if(L==="ko") bits.unshift("(Midjourney는 영어 인식이 더 정확합니다)");
+  const no=["device frame","hands","perspective mockup","blurry text","watermark"]; if(c.avoid) no.push(c.avoid);
+  return [{label:"프롬프트",text:`${bits.join(", ")} --ar ${AR[S.platform]} --style raw --no ${no.join(", ")}`}];
+}
+function imgSD(L){
+  const c=ctx("en");
+  const tags=["game ui", c.screen, `${c.genre} game`, c.style, ...c.mood, c.shape, c.depth, c.density, ...c.parts,
+    ...COLOR_ROLES.map((r,i)=>`${hueName(S.colors[i])[0]} ${r[2]}`), "ui design, straight-on, flat screenshot, high detail, sharp edges", c.extra].filter(Boolean);
+  const neg=["photo","realistic","device frame","hands","perspective","blurry","jpeg artifacts","watermark","signature","garbled text","inconsistent icons","cropped"];
+  if(c.avoid) neg.push(c.avoid);
+  const note=L==="ko"?`\n\n# 권장: 해상도 ${RES[S.platform].replace("x","×")}에 가까운 비율, CFG 5–7. SD 계열은 영어 태그가 더 잘 듣습니다.`:"";
+  return [{label:"프롬프트",text:tags.join(", ")+note},{label:"네거티브",text:neg.join(", ")}];
+}
+function tokens(){
+  const [bg,sf,pr,se,tx]=S.colors; const r=opt("shape",S.shape)[4];
+  return {bg,sf,pr,se,tx,r};
+}
+function codeCommon(L,c,t){
+  const ko=L==="ko";
+  const d=[];
+  d.push(ko?`## 디자인 방향`:`## Design direction`);
+  d.push(ko?`- 장르: ${c.genre}${c.title?` / 게임: ${c.title}`:""}${c.concept?` / 콘셉트: ${c.concept}`:""}`:`- Genre: ${c.genre}${c.title?` / Game: ${c.title}`:""}${c.concept?` / Concept: ${c.concept}`:""}`);
+  d.push(ko?`- 스타일: ${c.style}`:`- Style: ${c.style}`);
+  if(c.mood.length) d.push(ko?`- 분위기: ${list(c.mood,L)}`:`- Mood: ${list(c.mood,L)}`);
+  d.push(ko?`- 형태: ${c.shape}, ${c.depth}`:`- Shape & depth: ${c.shape}, ${c.depth}`);
+  d.push(ko?`- 밀도: ${c.density}`:`- Density: ${c.density}`);
+  d.push("");
+  d.push(ko?`## 색상 토큰 (이 값만 사용)`:`## Color tokens (use only these)`);
+  d.push(`- bg ${t.bg}\n- surface ${t.sf}\n- primary ${t.pr}\n- secondary ${t.se}\n- text ${t.tx}\n- radius ${t.r}`);
+  const cr=ratio(t.bg,t.tx), cp=ratio(t.pr,t.bg);
+  if(cr<4.5) d.push(ko?`- 주의: 배경 대비 글자 대비가 ${cr.toFixed(1)}:1로 낮습니다. 본문은 surface 위에 올리거나 외곽선을 넣어 4.5:1 이상을 확보하세요.`:`- Note: text on bg is only ${cr.toFixed(1)}:1. Put body text on surface or add an outline to reach 4.5:1.`);
+  d.push("");
+  d.push(ko?`## 화면 구성`:`## Screen`);
+  d.push(ko?`- ${c.screen}, ${c.platform}, 기준 해상도 ${RES[S.platform]}`:`- ${c.screen}, ${c.platform}, reference resolution ${RES[S.platform]}`);
+  if(c.parts.length) d.push((ko?`- 필수 요소:\n`:`- Required elements:\n`)+c.parts.map(p=>`  - ${p}`).join("\n"));
+  d.push(ko?`- 주 버튼은 화면에서 하나만 가장 눈에 띄게. 정보 위계는 크기와 굵기로 먼저 잡고 색은 그다음.`:`- Exactly one primary action stands out. Build hierarchy with size and weight first, color second.`);
+  d.push(ko?`- 버튼 상태: 기본, 눌림, 비활성. 터치 영역은 최소 44px(모바일).`:`- Button states: normal, pressed, disabled. Minimum 44px touch targets on mobile.`);
+  if(S.platform!=="pc") d.push(ko?`- 노치·홈 인디케이터를 고려한 세이프 에어리어 여백.`:`- Respect safe areas (notch, home indicator).`);
+  if(c.extra) d.push(ko?`- 추가: ${c.extra}`:`- Also: ${c.extra}`);
+  if(c.avoid) d.push(ko?`- 피할 것: ${c.avoid}`:`- Avoid: ${c.avoid}`);
+  return d.join("\n");
+}
+function codeWeb(L){
+  const c=ctx(L), t=tokens(), ko=L==="ko";
+  const head=ko?`게임 UI 목업을 단일 HTML 파일로 만들어 주세요. 외부 라이브러리와 이미지 없이 HTML/CSS(필요하면 바닐라 JS)만 씁니다.`
+    :`Build a game UI mockup as a single self-contained HTML file. HTML/CSS only (vanilla JS if needed), no external libraries or images.`;
+  const tail=ko?`## 구현 조건
+- 색과 반경은 :root CSS 변수로 정의하고 그 변수만 참조.
+- 화면은 ${AR[S.platform]} 고정 비율 캔버스로 만들고 브라우저 크기에 맞춰 확대·축소.
+- 아이콘은 인라인 SVG나 CSS 도형으로 단순하게. 이모지 금지.
+- 더미 숫자와 문구는 게임에 어울리는 짧은 한국어로.
+- 버튼에 :hover, :active, [disabled] 스타일과 짧은 눌림 애니메이션(prefers-reduced-motion 존중).
+## 출력
+- index.html 전체 코드 하나만. 설명은 코드 뒤에 세 줄 이내.`
+    :`## Implementation
+- Define colors and radius as :root CSS variables and reference only those.
+- Lay the screen out on a fixed ${AR[S.platform]} canvas that scales to fit the browser.
+- Icons as simple inline SVG or CSS shapes. No emoji.
+- Placeholder numbers and labels should be short and fit the game.
+- Buttons get :hover, :active and [disabled] styles plus a short press animation (respect prefers-reduced-motion).
+## Output
+- The full index.html in one code block. At most three lines of notes after it.`;
+  return [{label:"프롬프트",text:`${head}\n\n${codeCommon(L,c,t)}\n\n${tail}`}];
+}
+function codeUITK(L){
+  const c=ctx(L), t=tokens(), ko=L==="ko";
+  const head=ko?`Unity 6 UI Toolkit으로 게임 UI 화면을 만들어 주세요.`:`Build a game UI screen with Unity 6 UI Toolkit.`;
+  const tail=ko?`## 구현 조건
+- 파일: ${pascal()}Screen.uxml, ${pascal()}Theme.uss, ${pascal()}Screen.cs.
+- USS 상단에 :root 커스텀 프로퍼티(--color-bg, --color-surface, --color-primary, --color-secondary, --color-text, --radius)를 정의하고 var()로만 참조.
+- PanelSettings는 Scale With Screen Size, 기준 ${RES[S.platform]}, Match ${S.platform==="portrait"?"0(가로 기준)":"1(세로 기준)"}.
+- 버튼은 :hover, :active, :disabled 의사 클래스 스타일. transition은 scale과 background-color만.
+- 레이아웃은 flex만 사용하고 position: absolute는 겹치는 배지에만.
+- 이미지 에셋이 필요한 곳은 USS 배경색 자리 표시로 두고 주석으로 필요한 스프라이트를 적기.
+- C#은 UIDocument에서 rootVisualElement.Q<Button>()로 버튼을 찾고 clicked에 연결. 로직은 비워 두고 TODO 주석.
+- 세이프 에어리어는 Screen.safeArea를 읽어 루트 패딩에 반영.
+## 출력
+- 세 파일 전체 코드. 설명은 마지막에 짧게.`
+    :`## Implementation
+- Files: ${pascal()}Screen.uxml, ${pascal()}Theme.uss, ${pascal()}Screen.cs.
+- At the top of the USS define :root custom properties (--color-bg, --color-surface, --color-primary, --color-secondary, --color-text, --radius) and reference them only via var().
+- PanelSettings: Scale With Screen Size, reference ${RES[S.platform]}, Match ${S.platform==="portrait"?"0 (width)":"1 (height)"}.
+- Buttons styled with :hover, :active and :disabled. Transitions on scale and background-color only.
+- Flex layout only; position: absolute just for overlapping badges.
+- Where image assets are needed, use a USS background-color placeholder and a comment naming the sprite.
+- C#: in UIDocument, find buttons with rootVisualElement.Q<Button>() and hook clicked. Leave logic as TODO comments.
+- Apply Screen.safeArea as root padding.
+## Output
+- Full code for all three files. Brief notes at the end.`;
+  return [{label:"프롬프트",text:`${head}\n\n${codeCommon(L,c,t)}\n\n${tail}`}];
+}
+function codeUGUI(L){
+  const c=ctx(L), t=tokens(), ko=L==="ko";
+  const head=ko?`Unity 6 uGUI(Canvas)와 TextMeshPro로 게임 UI 화면을 만드는 에디터 스크립트를 작성해 주세요. 스크립트를 실행하면 씬에 화면 계층이 생성되어야 합니다.`
+    :`Write a Unity 6 editor script that builds this game UI screen with uGUI (Canvas) and TextMeshPro. Running it should create the full hierarchy in the open scene.`;
+  const tail=ko?`## 구현 조건
+- 메뉴: Tools/UI/Build ${pascal()} Screen. Undo.RegisterCreatedObjectUndo로 되돌릴 수 있게.
+- Canvas Scaler: Scale With Screen Size, 기준 ${RES[S.platform]}, Match ${S.platform==="portrait"?"0":"1"}.
+- 색은 ScriptableObject 테마(UITheme: bg, surface, primary, secondary, text)에서 읽기. 테마 에셋이 없으면 위 값으로 생성.
+- 앵커와 피벗을 올바르게 설정해 비율이 달라도 무너지지 않게. 고정 좌표 남발 금지, Layout Group 우선.
+- 둥근 모서리는 9-slice 스프라이트 자리로 두고, 없으면 기본 UISprite 사용.
+- 버튼은 Button 컴포넌트의 ColorTint 전환(눌림 색은 primary를 15% 어둡게).
+- 세이프 에어리어용 SafeArea 컴포넌트를 루트 패널에 붙이기.
+## 출력
+- 에디터 스크립트, UITheme, SafeArea 전체 코드. 설명은 짧게.`
+    :`## Implementation
+- Menu item: Tools/UI/Build ${pascal()} Screen. Register created objects with Undo.
+- Canvas Scaler: Scale With Screen Size, reference ${RES[S.platform]}, Match ${S.platform==="portrait"?"0":"1"}.
+- Read colors from a ScriptableObject theme (UITheme: bg, surface, primary, secondary, text); create it with the values above if missing.
+- Set anchors and pivots so the layout survives other aspect ratios. Prefer Layout Groups over hard-coded positions.
+- Rounded corners: leave a 9-slice sprite slot, fall back to the built-in UISprite.
+- Buttons use ColorTint transitions (pressed = primary darkened 15%).
+- Add a SafeArea component on the root panel.
+## Output
+- Full code for the editor script, UITheme and SafeArea. Brief notes.`;
+  return [{label:"프롬프트",text:`${head}\n\n${codeCommon(L,c,t)}\n\n${tail}`}];
+}
+function pascal(){
+  return (opt("screen",S.screen)[2].split(/[^a-zA-Z]+/).filter(Boolean).slice(0,2).map(w=>w[0].toUpperCase()+w.slice(1)).join("")) || "Game";
+}
+const BUILD={"img-natural":imgNatural,"img-mj":imgMJ,"img-sd":imgSD,"code-web":codeWeb,"code-uitk":codeUITK,"code-ugui":codeUGUI};
+
+/* ---------- output ---------- */
+function renderOut(){
+  const outs=BUILD[S.target](S.lang);
+  $("#outs").innerHTML=outs.map((o,i)=>`<div class="box"><div class="box-h"><span>${esc(o.label)}</span><span class="count">${o.text.length.toLocaleString()}자</span><span class="sp"></span><button class="btn" data-copy="${i}">복사</button></div><pre>${esc(o.text)}</pre></div>`).join("");
+  $("#outs").onclick=e=>{ const b=e.target.closest("[data-copy]"); if(b){ copy(outs[+b.dataset.copy].text); addHistory(); } };
+  const w=[];
+  if(!S.mood.length) w.push("분위기를 하나 이상 고르면 결과가 덜 밋밋합니다.");
+  if(S.parts.length>7) w.push(`요소가 ${S.parts.length}개입니다. 이미지 AI는 6개 안팎일 때 빠뜨리는 요소가 적습니다.`);
+  if(S.screen==="hud" && S.parts.includes("tabs")) w.push("HUD에 하단 탭은 보통 넣지 않습니다.");
+  $("#warn").textContent=w.join(" ");
+  document.querySelectorAll("#lang button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.v===S.lang));
+}
+function renderPreview(){
+  const p=$("#pv"), t=tokens();
+  p.className="pv "+(S.platform==="portrait"?"portrait":"landscape")+" d-"+S.depth+(S.shape==="line"?" s-line":"");
+  p.style.setProperty("--p-bg",t.bg); p.style.setProperty("--p-sf",t.sf); p.style.setProperty("--p-pr",t.pr);
+  p.style.setProperty("--p-se",t.se); p.style.setProperty("--p-tx",t.tx); p.style.setProperty("--p-r",t.r);
+  const ctaInk = ratio(t.pr,t.bg)>ratio(t.pr,t.tx)?t.bg:t.tx;
+  p.querySelector(".cta").style.color=ctaInk;
+  const rows=[["글자/배경",ratio(t.tx,t.bg)],["글자/패널",ratio(t.tx,t.sf)],["버튼 글자",ratio(t.pr,ctaInk)]];
+  $("#contrast").innerHTML="대비 (본문 4.5 이상 권장)<br>"+rows.map(([n,v])=>`${n} <span class="${v>=4.5?"ok":v>=3?"":"bad"}">${v.toFixed(1)}:1</span>`).join(" · ");
+}
+function update(full){
+  if(full) syncPressed();
+  renderOut(); renderPreview(); persist();
+  if(location.hash) history.replaceState(null,"",location.pathname+location.search);
+}
+
+/* ---------- library ---------- */
+function lib(){ try{ return JSON.parse(localStorage.getItem(LS_LIB))||{saved:[],history:[]}; }catch(e){ return {saved:[],history:[]}; } }
+function setLib(l){ localStorage.setItem(LS_LIB,JSON.stringify(l)); }
+function summary(s){ return [opt("screen",s.screen)[1],opt("genre",s.genre)[1],opt("style",s.style)[1],TARGETS.find(t=>t.id===s.target).ko].join(" · "); }
+function addHistory(){
+  const l=lib(), snap=JSON.stringify(S);
+  if(l.history[0] && JSON.stringify(l.history[0].s)===snap) return;
+  l.history.unshift({at:Date.now(),s:structuredClone(S)}); l.history=l.history.slice(0,30); setLib(l);
+}
+function renderLib(){
+  const l=lib();
+  const row=(it,kind,i)=>`<div class="item"><div class="t"><div>${esc(it.name||summary(it.s))}</div><small>${new Date(it.at).toLocaleString("ko-KR")}${it.name?" · "+esc(summary(it.s)):""}</small></div><button class="btn" data-load="${kind}:${i}">불러오기</button><button class="btn ghost" data-del="${kind}:${i}">삭제</button></div>`;
+  $("#libList").innerHTML=`<div class="group-label">저장한 설정</div>${l.saved.length?l.saved.map((x,i)=>row(x,"saved",i)).join(""):`<div class="empty">아직 없습니다.</div>`}
+    <div class="group-label">최근 복사 기록 (최대 30개)</div>${l.history.length?l.history.map((x,i)=>row(x,"history",i)).join(""):`<div class="empty">프롬프트를 복사하면 여기에 남습니다.</div>`}`;
+}
+$("#libList").addEventListener("click",e=>{
+  const b=e.target.closest("button"); if(!b) return; const l=lib();
+  if(b.dataset.load){ const [k,i]=b.dataset.load.split(":"); S=sanitize(l[k][+i].s); renderForm(); update(true); $("#lib").close(); toast("불러왔습니다"); }
+  if(b.dataset.del){ const [k,i]=b.dataset.del.split(":"); l[k].splice(+i,1); setLib(l); renderLib(); }
+});
+$("#bLib").onclick=()=>{ renderLib(); $("#lib").showModal(); };
+document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>b.closest("dialog").close());
+$("#bSave").onclick=()=>{
+  const name=prompt("이 설정의 이름", S.title?`${S.title} ${opt("screen",S.screen)[1]}`:summary(S)); if(name===null) return;
+  const l=lib(); l.saved.unshift({name:name.trim().slice(0,60),at:Date.now(),s:structuredClone(S)}); setLib(l); toast("저장했습니다");
+};
+$("#bExport").onclick=()=>{
+  const blob=new Blob([JSON.stringify({app:"game-ui-prompt-lab",version:1,...lib()},null,2)],{type:"application/json"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="game-ui-prompt-lab-backup.json"; a.click(); URL.revokeObjectURL(a.href);
+};
+$("#fImport").onchange=async e=>{
+  const f=e.target.files[0]; if(!f) return;
+  try{
+    const d=JSON.parse(await f.text()); if(!Array.isArray(d.saved)) throw 0;
+    const l=lib(); l.saved=[...d.saved.filter(x=>x&&x.s).map(x=>({...x,s:sanitize(x.s)})),...l.saved].slice(0,200);
+    l.history=[...(d.history||[]).filter(x=>x&&x.s).map(x=>({...x,s:sanitize(x.s)})),...l.history].slice(0,30);
+    setLib(l); renderLib(); toast("가져왔습니다");
+  }catch(err){ toast("백업 파일 형식이 아닙니다"); }
+  e.target.value="";
+};
+
+/* ---------- header actions ---------- */
+$("#lang").onclick=e=>{ const b=e.target.closest("button"); if(!b) return; S.lang=b.dataset.v; update(false); };
+$("#bReset").onclick=()=>{ if(!confirm("모든 선택을 기본값으로 되돌릴까요? 저장함은 그대로 남습니다.")) return; S=structuredClone(DEFAULT); renderForm(); update(true); };
+$("#bShare").onclick=()=>{
+  const url=location.href.split("#")[0]+"#s="+btoa(unescape(encodeURIComponent(JSON.stringify(S))));
+  copy(url);
+};
+$("#bRandom").onclick=()=>{
+  const pick=a=>a[Math.floor(Math.random()*a.length)];
+  for(const q of Q){
+    if(q.key==="platform") continue;
+    const ids=q.opts.map(o=>o[0]);
+    if(q.multi){ const n=q.key==="mood"?1+Math.floor(Math.random()*2):4+Math.floor(Math.random()*2); S[q.key]=[...ids].sort(()=>Math.random()-.5).slice(0,n); }
+    else S[q.key]=pick(ids);
+  }
+  const p=pick(PALETTES); S.palette=p.id; S.colors=p.c.slice();
+  update(true);
+};
+
+renderForm(); update(true);
+</script>
+</body>
+</html>
